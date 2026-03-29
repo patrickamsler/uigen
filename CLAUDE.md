@@ -44,6 +44,29 @@ All files are in-memory only — no disk writes. `src/lib/file-system.ts` implem
 - Authenticated users get projects persisted to SQLite via Prisma (`prisma/schema.prisma`): the `Project` model stores chat messages and file system state as serialized JSON strings
 - Anonymous users get full functionality with no persistence
 
+#### Database Schema (`prisma/schema.prisma`)
+
+Prisma client output: `src/generated/prisma`
+
+```
+User
+  id        String   (cuid, PK)
+  email     String   (unique)
+  password  String
+  createdAt DateTime
+  updatedAt DateTime
+  projects  Project[]
+
+Project
+  id        String   (cuid, PK)
+  name      String
+  userId    String?  (FK → User.id, cascade delete)
+  messages  String   (serialized JSON array, default "[]")
+  data      String   (serialized JSON object, default "{}")
+  createdAt DateTime
+  updatedAt DateTime
+```
+
 ### Provider Selection (`src/lib/provider.ts`)
 
 - `ANTHROPIC_API_KEY` set → Claude Haiku 4.5 via `@ai-sdk/anthropic`
