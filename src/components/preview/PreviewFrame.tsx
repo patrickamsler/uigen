@@ -13,17 +13,22 @@ export function PreviewFrame() {
   const { getAllFiles, refreshTrigger } = useFileSystem();
   const [error, setError] = useState<string | null>(null);
   const [entryPoint, setEntryPoint] = useState<string>("/App.jsx");
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  // Use a ref instead of state so that toggling this flag never re-triggers the effect.
+  const isFirstLoadRef = useRef(true);
 
   useEffect(() => {
     const updatePreview = () => {
       try {
         const files = getAllFiles();
 
-        // Clear error first when we have files
-        if (files.size > 0 && error) {
-          setError(null);
+        if (files.size === 0) {
+          setError(isFirstLoadRef.current ? "firstLoad" : "No files to preview");
+          return;
         }
+
+        // We have files – clear the first-load flag and any previous error.
+        isFirstLoadRef.current = false;
+        setError(null);
 
         // Find the entry point - look for App.jsx, App.tsx, index.jsx, or index.tsx
         let foundEntryPoint = entryPoint;
@@ -41,7 +46,7 @@ export function PreviewFrame() {
           if (found) {
             foundEntryPoint = found;
             setEntryPoint(found);
-          } else if (files.size > 0) {
+          } else {
             // Just use the first .jsx/.tsx file found
             const firstJSX = Array.from(files.keys()).find(
               (path) => path.endsWith(".jsx") || path.endsWith(".tsx")
@@ -51,20 +56,6 @@ export function PreviewFrame() {
               setEntryPoint(firstJSX);
             }
           }
-        }
-
-        if (files.size === 0) {
-          if (isFirstLoad) {
-            setError("firstLoad");
-          } else {
-            setError("No files to preview");
-          }
-          return;
-        }
-
-        // We have files, so it's no longer the first load
-        if (isFirstLoad) {
-          setIsFirstLoad(false);
         }
 
         if (!foundEntryPoint || !files.has(foundEntryPoint)) {
@@ -86,8 +77,6 @@ export function PreviewFrame() {
             "allow-scripts allow-same-origin allow-forms"
           );
           iframe.srcdoc = previewHTML;
-
-          setError(null);
         }
       } catch (err) {
         console.error("Preview error:", err);
@@ -96,7 +85,10 @@ export function PreviewFrame() {
     };
 
     updatePreview();
-  }, [refreshTrigger, getAllFiles, entryPoint, error, isFirstLoad]);
+  // error and isFirstLoad are intentionally excluded: setting them inside the
+  // effect must not re-trigger it, or we get redundant iframe reloads.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTrigger, getAllFiles, entryPoint]);
 
   if (error) {
     if (error === "firstLoad") {
