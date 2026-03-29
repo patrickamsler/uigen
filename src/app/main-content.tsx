@@ -76,11 +76,13 @@ export function MainContent({ user, project }: MainContentProps) {
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-hidden bg-neutral-50">
-                  {activeView === "preview" ? (
-                    <div className="h-full bg-white">
-                      <PreviewFrame />
-                    </div>
-                  ) : (
+                  {/* Preview – always mounted so the iframe is never destroyed on toggle */}
+                  <div className={`h-full bg-white${activeView !== "preview" ? " hidden" : ""}`}>
+                    <PreviewFrame />
+                  </div>
+
+                  {/* Code – only mounted when active; Monaco needs real dimensions */}
+                  {activeView === "code" && (
                     <ResizablePanelGroup
                       direction="horizontal"
                       className="h-full"
