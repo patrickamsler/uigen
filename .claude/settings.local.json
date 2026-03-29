@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/patrick/projects/uigen -maxdepth 1 -type f \\\\\\(-name .*rules* -o -name CLAUDE.md -o -name Makefile -o -name .cursorrules \\\\\\))"
+    ]
+  }
+}
